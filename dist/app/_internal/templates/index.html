@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System - Tienda Deportiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-dumbbell"></i>
+            <span>MW Sport Wear</span>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-target="dashboard">
+                <i class="fas fa-home"></i> Inicio
+            </li>
+            <li class="nav-item" data-target="sales">
+                <i class="fas fa-cash-register"></i> Nueva Venta
+            </li>
+            <li class="nav-item" data-target="clients">
+                <i class="fas fa-users"></i> Clientes
+            </li>
+            <li class="nav-item" data-target="inventory">
+                <i class="fas fa-box-open"></i> Inventario
+            </li>
+            <li class="nav-item" data-target="audit">
+                <i class="fas fa-list-alt"></i> Auditoría
+            </li>
+            <li class="nav-item" data-target="settings">
+                <i class="fas fa-cog"></i> Configuración
+            </li>
+        </ul>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <!-- Barra Superior -->
+        <div class="topbar">
+            <div class="search-bar">
+                <i class="fas fa-search" style="color: var(--text-light); margin-right: 8px;"></i>
+                <input type="text" placeholder="Buscar en todo el sistema...">
+            </div>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 14px;">Administrador</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTAS (SPA) -->
+
+        <!-- VISTA: DASHBOARD -->
+        <div id="view-dashboard" class="view-section active">
+            <h2 class="page-title">Resumen de Hoy</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="stat-info">
+                        <h4>Ingresos del Día</h4>
+                        <h2 id="dash-total">$ 0</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--primary-blue); background-color: var(--light-blue);"><i class="fas fa-receipt"></i></div>
+                    <div class="stat-info">
+                        <h4>Ventas Realizadas</h4>
+                        <h2 id="dash-count">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #00b894; background-color: #e8f8f5;"><i class="fas fa-boxes"></i></div>
+                    <div class="stat-info">
+                        <h4>Alertas Stock Bajo</h4>
+                        <h2 id="dash-stock">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Últimas Ventas</h3>
+                    <a href="/api/export/sales" class="btn btn-success" style="text-decoration: none;"><i class="fas fa-file-excel"></i> Exportar a Excel</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N° Recibo</th>
+                            <th>Hora</th>
+                            <th>Total</th>
+                            <th>Método</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-sales-table">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VISTA: NUEVA VENTA (POS) -->
+        <div id="view-sales" class="view-section">
+            <h2 class="page-title">Punto de Venta</h2>
+            <div class="pos-layout">
+                <div class="pos-products card">
+                    <div class="client-selector-container" style="margin-bottom: 15px;">
+                        <label for="pos-client" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: block; color: var(--dark-purple);">Cliente (Opcional):</label>
+                        <select id="pos-client" style="width: 100%; padding: 12px; font-size: 15px; border: 2px solid #eee; border-radius: 8px; outline: none;" onchange="updateCartPrices()">
+                            <option value="">Consumidor Final (Minorista)</option>
+                            <!-- Llenado por JS -->
+                        </select>
+                    </div>
+                    <div class="barcode-input-container">
+                        <input type="text" id="barcode-input" placeholder="Escanea código de barras o escribe para buscar..." autofocus>
+                    </div>
+                    <div id="search-results" style="display:flex; flex-direction:column; gap:10px;">
+                        <!-- Resultados de búsqueda -->
+                    </div>
+                    <div style="margin-top:20px;">
+                        <h4 style="color:var(--text-light); margin-bottom:10px; font-size:14px;"><i class="fas fa-bolt"></i> Acceso Rápido</h4>
+                        <div id="quick-products" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
+                            <!-- Llenado por JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="pos-cart card">
+                    <h3>Carrito de Venta</h3>
+                    <div class="cart-items" id="cart-items">
+                        <!-- Items agregados -->
+                    </div>
+                    <div class="cart-total">
+                        Total: $<span id="cart-total-amount">0.00</span>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 15px; padding: 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px;">
+                        <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="sale_type" value="Detal" checked> Venta al Detal</label>
+                        <label style="cursor: pointer; font-weight: 500;"><input type="radio" name="sale_type" value="Mayor"> Venta al Mayor</label>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px; color: var(--dark-purple);">Método de Pago:</label>
+                        <input type="hidden" id="payment-method" value="Efectivo">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;" id="payment-buttons">
+                            <button class="btn btn-payment active" style="background:#059669;" onclick="setPayment('Efectivo')"><i class="fas fa-money-bill-wave"></i> Efectivo</button>
+                            <button class="btn btn-payment" style="background:#555;" onclick="setPayment('Nequi')"><i class="fas fa-mobile-alt"></i> Nequi</button>
+                            <button class="btn btn-payment" style="background:#555;" onclick="setPayment('Daviplata')"><i class="fas fa-mobile-alt"></i> Daviplata</button>
+                            <button class="btn btn-payment" style="background:#555;" onclick="setPayment('Bold')"><i class="fas fa-credit-card"></i> Bold</button>
+                        </div>
+                    </div>
+
+                    <div id="cash-calculator" style="margin-top: 15px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+                        <label style="font-size: 14px; font-weight: 600;">Monto Recibido por Cliente ($):</label>
+                        <input type="number" id="cash-received" oninput="calculateChange()" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" placeholder="Ej. 50000">
+                        <h4 style="margin-top: 10px; color: #d35400; font-size: 18px;">Vueltas: $<span id="change-amount">0</span></h4>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top: 20px;">
+                        <button class="btn pay-btn" onclick="cancelSale()" style="background:#e74c3c; width:30%; font-size:14px;">
+                            <i class="fas fa-times"></i> CANCELAR
+                        </button>
+                        <button class="btn btn-success pay-btn" onclick="processSale()" style="width:70%; font-size:16px; font-weight:bold;">
+                            <i class="fas fa-check-circle"></i> FACTURAR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA: CLIENTES -->
+        <div id="view-clients" class="view-section">
+            <h2 class="page-title">Directorio de Clientes</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Lista de Clientes</h3>
+                    <button class="btn" onclick="showClientModal()">+ Nuevo Cliente</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Tipo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VISTA: INVENTARIO -->
+        <div id="view-inventory" class="view-section">
+            <h2 class="page-title">Gestión de Inventario</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Lista de Productos</h3>
+                    <button class="btn" onclick="showAddProductForm()">+ Nuevo Producto</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>P. Detal</th>
+                            <th>P. Mayor</th>
+                            <th>Origen</th>
+                            <th>Stock</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VISTA: AUDITORÍA -->
+        <div id="view-audit" class="view-section">
+            <h2 class="page-title">Registro de Auditoría</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Últimos Movimientos del Sistema</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Descripción de la Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VISTA: CONFIGURACIÓN -->
+        <div id="view-settings" class="view-section">
+            <h2 class="page-title">Configuración del Sistema</h2>
+            <div class="card" style="max-width:500px;">
+                <div class="card-header">
+                    <h3>Impuesto al Valor Agregado (IVA)</h3>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600; display:block; margin-bottom:5px;">Habilitar cálculo interno de IVA:</label>
+                    <select id="set-iva-enabled" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                        <option value="1">Sí, calcular IVA interno</option>
+                        <option value="0">No, desactivar IVA</option>
+                    </select>
+                    <small style="color:#777;">* El IVA ya va incluido en el precio, esto solo calcula el desglose contable.</small>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-weight:600; display:block; margin-bottom:5px;">Porcentaje del IVA (%):</label>
+                    <input type="number" id="set-iva-percent" value="19" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <button class="btn btn-success" onclick="saveSettings()">Guardar Configuración</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TICKET DE IMPRESIÓN (Oculto) -->
+    <div id="print-section" style="display: none;">
+        <div style="text-align: center; margin-bottom: 5px;">
+            <i class="fas fa-dumbbell" style="font-size: 24px; margin-bottom: 5px; color: black;"></i>
+            <h3 style="margin: 0; font-size: 14px;">MW SPORT WEAR</h3>
+            <p style="margin: 2px 0; font-size: 10px;">By Wendy Riveros</p>
+            <p style="margin: 2px 0; font-size: 10px;">Tel: 301 311 9600</p>
+            <p style="margin: 2px 0; font-size: 10px;">Ig: @mw.sportwear</p>
+            <br>
+            <p style="margin: 0; font-size: 12px; font-weight: bold;">Recibo de Venta <span id="print-type"></span></p>
+            <p id="print-date" style="margin: 2px 0; font-size: 10px;"></p>
+            <p id="print-method" style="margin: 2px 0; font-size: 10px;"></p>
+        </div>
+        <hr style="border-top: 1px dashed black; margin: 5px 0;">
+        <div id="print-items" style="margin: 5px 0;"></div>
+        <hr style="border-top: 1px dashed black; margin: 5px 0;">
+        <h3 style="text-align: right; font-size: 13px; margin: 5px 0;">Total: $<span id="print-total"></span></h3>
+        <p id="print-change-container" style="text-align: right; font-size: 11px; margin: 2px 0;">Vueltas: $<span id="print-change">0</span></p>
+        <p style="text-align: center; margin-top: 15px; font-size: 10px; font-style: italic;">¡Gracias por su compra!<br>Conserve este recibo.</p>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Modal Producto -->
+    <div id="product-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="card" style="width:400px; max-width:90%; padding:25px;">
+            <h3 id="product-modal-title" style="margin-bottom:20px;">Nuevo Producto</h3>
+            <input type="hidden" id="prod-id">
+            <div style="margin-bottom:15px;">
+                <label>Nombre:</label>
+                <input type="text" id="prod-name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Código de Barras:</label>
+                <input type="text" id="prod-barcode" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <label>Precio Detal:</label>
+                    <input type="number" id="prod-price" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label>Precio Mayor:</label>
+                    <input type="number" id="prod-wholesale" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <label>Costo:</label>
+                    <input type="number" id="prod-cost" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label>Stock:</label>
+                    <input type="number" id="prod-stock" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="margin-bottom:20px;">
+                <label>Origen:</label>
+                <select id="prod-origin" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="Nacional">Nacional</option>
+                    <option value="Importado">Importado</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn" style="background:#e74c3c;" onclick="document.getElementById('product-modal').style.display='none'">Cancelar</button>
+                <button class="btn btn-success" onclick="saveProduct()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cliente -->
+    <div id="client-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="card" style="width:400px; max-width:90%; padding:25px;">
+            <h3 id="client-modal-title" style="margin-bottom:20px;">Nuevo Cliente</h3>
+            <input type="hidden" id="client-id">
+            <div style="margin-bottom:15px;">
+                <label>Documento/NIT:</label>
+                <input type="text" id="client-doc" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Nombre:</label>
+                <input type="text" id="client-name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Teléfono:</label>
+                <input type="text" id="client-phone" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label>Tipo de Cliente:</label>
+                <select id="client-type" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="Minorista">Minorista</option>
+                    <option value="Mayorista">Mayorista</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn" style="background:#e74c3c;" onclick="document.getElementById('client-modal').style.display='none'">Cancelar</button>
+                <button class="btn btn-success" onclick="saveClient()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
